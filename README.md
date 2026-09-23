@@ -66,9 +66,9 @@ The entire application is a single self-contained HTML file:
 
 The app includes a `runTests()` function covering three areas:
 
-- **Unit tests** — each core operation (joker moves, triple cut, count cut, text cleaning, letter/number conversion) tested in isolation
-- **Round-trip tests** — verifies `decrypt(encrypt(message, seed), seed) === message` across multiple sample messages
-- **Cryptographic properties** — determinism (same seed → same output), different seeds → different outputs, ciphertext differs from plaintext, message length is preserved, and spaces stay in place
+- **Unit tests** each core operation (joker moves, triple cut, count cut, text cleaning, letter/number conversion) tested in isolation
+- **Round-trip tests** verifies `decrypt(encrypt(message, seed), seed) === message` across multiple sample messages
+- **Cryptographic properties** determinism (same seed → same output), different seeds → different outputs, ciphertext differs from plaintext, message length is preserved, and spaces stay in place
 
 ## Limitations
 
