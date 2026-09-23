@@ -62,8 +62,6 @@ The entire application is a single self-contained HTML file:
 - **JavaScript** for the cipher logic, animations, and interactivity
 - **Canvas** for dynamically drawing the cards
 
-No server, build step, or external framework required — just open it in a browser.
-
 ## Testing
 
 The app includes a `runTests()` function covering three areas:
@@ -84,5 +82,3 @@ The app includes a `runTests()` function covering three areas:
 - Detailed export of the step-by-step explanations
 - Better visualization of card positions within the deck
 - Automated test suite
-
-Project completed for M1 Informatique, Université de Bourgogne (UFR Sciences et Techniques), supervised by Vincent Vajnovszki.
