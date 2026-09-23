@@ -1,0 +1,1883 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cipher Cards</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230f172a'/%3E%3Cpath d='M16 22h32v20H16z' fill='%23f59e0b'/%3E%3Cpath d='M23 19h18v6H23z' fill='%23fde68a'/%3E%3C/svg%3E">
+    <style>
+        @font-face {
+            font-family: "Special Elite";
+            src: url("SpecialElite.ttf") format("truetype");
+        }
+
+        :root {
+            --bg-deep: #08111f;
+            --bg-mid: #0f1f35;
+            --panel: rgba(8, 17, 31, 0.82);
+            --panel-strong: rgba(9, 21, 39, 0.92);
+            --line: rgba(245, 158, 11, 0.28);
+            --line-strong: rgba(251, 191, 36, 0.64);
+            --text: #f8f4e7;
+            --muted: #c8b78f;
+            --gold: #f59e0b;
+            --gold-soft: #fde68a;
+            --cyan: #67e8f9;
+            --red: #fb7185;
+            --green: #34d399;
+            --shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: "Special Elite", monospace;
+            min-height: 100vh;
+            color: var(--text);
+            background:
+                radial-gradient(circle at top left, rgba(103, 232, 249, 0.12), transparent 30%),
+                radial-gradient(circle at top right, rgba(245, 158, 11, 0.15), transparent 28%),
+                linear-gradient(160deg, var(--bg-deep) 0%, #0b1425 45%, var(--bg-mid) 100%);
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        body::before,
+        body::after {
+            content: "";
+            position: fixed;
+            inset: auto;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        body::before {
+            width: 420px;
+            height: 420px;
+            top: -120px;
+            right: -140px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(245, 158, 11, 0.22), transparent 68%);
+            animation: drift 16s ease-in-out infinite;
+        }
+
+        body::after {
+            width: 360px;
+            height: 360px;
+            bottom: -100px;
+            left: -80px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(103, 232, 249, 0.16), transparent 70%);
+            animation: drift 18s ease-in-out infinite reverse;
+        }
+
+        .app-shell {
+            position: relative;
+            z-index: 1;
+            width: min(1180px, calc(100% - 32px));
+            margin: 0 auto;
+            padding: 28px 0 56px;
+        }
+
+        .eyebrow {
+            color: var(--cyan);
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+        }
+
+        button,
+        label[for="load-file"],
+        label[for="load-image"] {
+            border: none;
+            cursor: pointer;
+            font-family: "Special Elite", monospace;
+            transition: transform 0.22s ease, box-shadow 0.22s ease, background 0.22s ease, border-color 0.22s ease;
+        }
+
+        button:hover,
+        label[for="load-file"]:hover,
+        label[for="load-image"]:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 16px 34px rgba(0, 0, 0, 0.35);
+        }
+
+        .app {
+            display: block;
+            min-height: 100vh;
+            animation: fadeUp 0.7s ease;
+        }
+
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 20px;
+            margin-bottom: 24px;
+            padding: 24px 26px;
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: 24px;
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(14px);
+        }
+
+        .topbar-copy {
+            display: grid;
+            gap: 8px;
+        }
+
+        .topbar-copy p {
+            color: var(--muted);
+            line-height: 1.7;
+            max-width: 760px;
+        }
+
+        .status-chip {
+            align-self: center;
+            white-space: nowrap;
+            padding: 10px 14px;
+            border: 1px solid rgba(103, 232, 249, 0.28);
+            border-radius: 999px;
+            color: var(--cyan);
+            background: rgba(12, 30, 43, 0.72);
+            font-size: 0.92rem;
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: minmax(0, 1.02fr) minmax(340px, 0.98fr);
+            gap: 22px;
+            align-items: start;
+        }
+
+        .stack {
+            display: grid;
+            gap: 22px;
+        }
+
+        .panel {
+            background: var(--panel-strong);
+            border: 1px solid var(--line);
+            border-radius: 24px;
+            padding: 24px;
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(12px);
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 18px;
+        }
+
+        .panel-title {
+            font-size: 1.45rem;
+            color: var(--gold-soft);
+        }
+
+        .panel-kicker {
+            color: var(--muted);
+            font-size: 0.92rem;
+        }
+
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 12px;
+            margin-bottom: 18px;
+        }
+
+        .metric {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 18px;
+            padding: 14px;
+        }
+
+        .metric-label {
+            display: block;
+            color: var(--muted);
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 8px;
+        }
+
+        .metric-value {
+            color: var(--text);
+            font-size: 1.05rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 10px;
+            color: var(--gold-soft);
+            font-size: 1rem;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 120px;
+            background: rgba(2, 6, 14, 0.8);
+            color: var(--text);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 18px;
+            padding: 16px 18px;
+            font-family: "Special Elite", monospace;
+            font-size: 0.96rem;
+            line-height: 1.7;
+            resize: vertical;
+            outline: none;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+        }
+
+        textarea:focus {
+            border-color: rgba(103, 232, 249, 0.5);
+            box-shadow: 0 0 0 4px rgba(103, 232, 249, 0.08);
+            transform: translateY(-1px);
+        }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        button,
+        label[for="load-file"],
+        label[for="load-image"] {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 48px;
+            padding: 12px 18px;
+            border-radius: 16px;
+            font-size: 0.92rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.16), rgba(251, 113, 133, 0.12));
+            color: var(--text);
+            border: 1px solid rgba(245, 158, 11, 0.25);
+        }
+
+        .primary-btn {
+            background: linear-gradient(135deg, var(--gold) 0%, #f97316 100%);
+            color: #1a1206;
+            border-color: transparent;
+        }
+
+        .secondary-btn {
+            background: linear-gradient(135deg, rgba(103, 232, 249, 0.18), rgba(14, 165, 233, 0.08));
+            border-color: rgba(103, 232, 249, 0.28);
+        }
+
+        .ghost-btn {
+            background: transparent;
+            border-color: rgba(255, 255, 255, 0.16);
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .output-grid {
+            display: grid;
+            gap: 16px;
+        }
+
+        .mode-toggle {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 14px;
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--muted);
+        }
+
+        .mode-toggle input {
+            accent-color: var(--gold);
+            inline-size: 18px;
+            block-size: 18px;
+        }
+
+        .textarea-card {
+            display: grid;
+            gap: 10px;
+        }
+
+        .textarea-card small {
+            color: var(--muted);
+            line-height: 1.5;
+        }
+
+        .deck-section {
+            display: grid;
+            gap: 18px;
+        }
+
+        .deck-grid {
+            display: grid;
+            gap: 18px;
+        }
+
+        .stepper-panel {
+            display: grid;
+            gap: 18px;
+            margin-bottom: 18px;
+            padding: 18px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 22px;
+        }
+
+        .stepper-topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .step-badge {
+            padding: 8px 12px;
+            border-radius: 999px;
+            color: var(--gold-soft);
+            background: rgba(245, 158, 11, 0.12);
+            border: 1px solid rgba(245, 158, 11, 0.22);
+            font-size: 0.85rem;
+        }
+
+        .step-card {
+            display: grid;
+            gap: 12px;
+            padding: 16px;
+            border-radius: 18px;
+            background: rgba(4, 11, 20, 0.62);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .step-card h4 {
+            color: var(--gold-soft);
+            font-size: 1rem;
+        }
+
+        .step-card p {
+            color: var(--muted);
+            line-height: 1.7;
+        }
+
+        .step-meta {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 10px;
+        }
+
+        .step-meta-item {
+            padding: 12px;
+            border-radius: 14px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .step-meta-item strong {
+            display: block;
+            margin-bottom: 6px;
+            color: var(--gold-soft);
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .step-meta-item span {
+            color: var(--text);
+            font-size: 0.92rem;
+            line-height: 1.5;
+        }
+
+        .step-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .step-progress {
+            color: var(--muted);
+            font-size: 0.92rem;
+        }
+
+        .legend-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 12px;
+        }
+
+        .legend-disclosure {
+            margin-top: 18px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 18px;
+            overflow: hidden;
+        }
+
+        .legend-disclosure summary {
+            list-style: none;
+            cursor: pointer;
+            padding: 16px 18px;
+            color: var(--gold-soft);
+            background: rgba(255, 255, 255, 0.02);
+            user-select: none;
+        }
+
+        .legend-disclosure summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .legend-disclosure summary::after {
+            content: "Afficher";
+            float: right;
+            color: var(--muted);
+            font-size: 0.88rem;
+        }
+
+        .legend-disclosure[open] summary::after {
+            content: "Masquer";
+        }
+
+        .legend-content {
+            padding: 16px 18px 18px;
+        }
+
+        .legend-item {
+            padding: 14px;
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .legend-item strong {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--gold-soft);
+            font-size: 0.82rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .legend-item p {
+            color: var(--muted);
+            line-height: 1.6;
+            font-size: 0.92rem;
+        }
+
+        .deck-container {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 22px;
+            padding: 18px;
+        }
+
+        .deck-label-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .deck-pill {
+            padding: 6px 10px;
+            border-radius: 999px;
+            font-size: 0.78rem;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            color: var(--muted);
+        }
+
+        canvas {
+            width: 100%;
+            max-width: 100%;
+            height: auto;
+            display: block;
+            margin: 0 auto;
+            background:
+                radial-gradient(circle at top, rgba(255, 255, 255, 0.06), transparent 40%),
+                linear-gradient(180deg, rgba(17, 24, 39, 0.95), rgba(3, 7, 18, 0.95));
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 18px;
+        }
+
+        #encrypt-deck-canvas {
+            box-shadow: inset 0 0 0 1px rgba(52, 211, 153, 0.25), 0 14px 30px rgba(0, 0, 0, 0.25);
+        }
+
+        #decrypt-deck-canvas {
+            box-shadow: inset 0 0 0 1px rgba(251, 113, 133, 0.25), 0 14px 30px rgba(0, 0, 0, 0.25);
+        }
+
+        .footer-note {
+            margin-top: 18px;
+            color: var(--muted);
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(18px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes drift {
+            0%, 100% {
+                transform: translate3d(0, 0, 0) scale(1);
+            }
+            50% {
+                transform: translate3d(-16px, 18px, 0) scale(1.06);
+            }
+        }
+
+        @media (max-width: 1024px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .app-shell {
+                width: min(100% - 20px, 1180px);
+                padding: 16px 0 36px;
+            }
+
+            .topbar,
+            .panel {
+                padding: 18px;
+            }
+
+            .metrics {
+                grid-template-columns: 1fr;
+            }
+
+            .step-meta {
+                grid-template-columns: 1fr;
+            }
+
+            .legend-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .panel-header,
+            .stepper-topbar,
+            .deck-label-row,
+            .topbar {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            textarea {
+                min-height: 96px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <main class="app" id="app">
+        <div class="app-shell">
+            <section class="topbar">
+                <div class="topbar-copy">
+                    <span class="eyebrow">Cipher Cards</span>
+                    <h2 class="panel-title">Chiffrement, déchiffrement et visualisation du deck</h2>
+                    <p>
+                        Un jeu de 54 cartes. Une clé impossible à briser. Chiffrez, déchiffrez, et observez chaque mouvement de l'algorithme en temps réel.
+                    </p>
+                </div>
+                <div class="status-chip" id="seed-chip">Graine : en attente</div>
+            </section>
+
+            <section class="dashboard">
+                <div class="stack">
+                    <section class="panel input-section">
+                        <div class="panel-header">
+                            <div>
+                                <h3 class="panel-title">Entrée</h3>
+                                <p class="panel-kicker">Texte manuel, fichier `.txt` ou image binaire convertie.</p>
+                            </div>
+                        </div>
+                        <div class="metrics">
+                            <div class="metric">
+                                <span class="metric-label">Mode</span>
+                                <span class="metric-value" id="mode-indicator">Texte</span>
+                            </div>
+                            <div class="metric">
+                                <span class="metric-label">Longueur entrée</span>
+                                <span class="metric-value" id="input-length">0 caractères</span>
+                            </div>
+                            <div class="metric">
+                                <span class="metric-label">Deck synchronisé</span>
+                                <span class="metric-value" id="deck-status">Non initialisé</span>
+                            </div>
+                        </div>
+                        <label for="input-text">Message à traiter</label>
+                        <textarea id="input-text" placeholder="Saisissez votre message ici..."></textarea>
+                        <div class="controls">
+                            <label for="load-file" class="secondary-btn">Charger un fichier<input type="file" id="load-file" accept=".txt"></label>
+                            <label for="load-image" class="secondary-btn">Charger une image<input type="file" id="load-image" accept=".png,.jpg,.jpeg,.bmp"></label>
+                        </div>
+                    </section>
+
+                    <section class="panel output-section">
+                        <div class="panel-header">
+                            <div>
+                                <h3 class="panel-title">Sorties et mode de lecture</h3>
+                                <p class="panel-kicker">Choisissez entre le resultat immediat et une lecture pas a pas de l'algorithme.</p>
+                            </div>
+                        </div>
+                        <label class="mode-toggle" for="step-mode">
+                            <input type="checkbox" id="step-mode" checked>
+                            <span>Mode pas a pas active</span>
+                        </label>
+                        <div class="output-grid">
+                            <div class="textarea-card">
+                                <label for="original-text">Message original nettoye</label>
+                                <textarea id="original-text" readonly placeholder="Le texte nettoye apparaitra ici."></textarea>
+                                <small>Les caracteres non alphabetiques sont retires, sauf les espaces.</small>
+                            </div>
+                            <div class="textarea-card">
+                                <label for="encrypted-text">Message chiffre</label>
+                                <textarea id="encrypted-text" readonly placeholder="Le message chiffre apparaitra ici."></textarea>
+                                <small>En mode pas a pas, le texte se construit au fil des etapes.</small>
+                            </div>
+                            <div class="textarea-card">
+                                <label for="decrypted-text">Message dechiffre</label>
+                                <textarea id="decrypted-text" readonly placeholder="Le message dechiffre apparaitra ici."></textarea>
+                                <small>Le dechiffrement reutilise la meme graine pour rejouer les memes etapes.</small>
+                            </div>
+                        </div>
+                        <div class="controls">
+                            <button class="primary-btn" onclick="encrypt()">Encrypt</button>
+                            <button class="secondary-btn" onclick="decrypt()">Decrypt</button>
+                            <button class="ghost-btn" onclick="saveFile()">Save File</button>
+                            <button class="ghost-btn" onclick="clearAll()">Clear</button>
+                        </div>
+                    </section>
+                </div>
+
+                <section class="panel deck-section">
+                    <div class="panel-header">
+                        <div>
+                            <h3 class="panel-title">Visualisation des decks</h3>
+                            <p class="panel-kicker">Chaque etape peut maintenant montrer l'etat exact du deck et l'action en cours.</p>
+                        </div>
+                    </div>
+                    <div class="stepper-panel">
+                        <div class="stepper-topbar">
+                            <div>
+                                <h4 class="panel-title">Explication pas a pas</h4>
+                                <p class="step-progress" id="step-progress">Aucune simulation chargee.</p>
+                            </div>
+                            <span class="step-badge" id="step-badge">Mode demo</span>
+                        </div>
+                        <div class="step-card">
+                            <h4 id="step-title">Pret a expliquer l'algorithme</h4>
+                            <p id="step-description">Lancez un chiffrement ou un dechiffrement pour voir chaque mouvement des jokers, les coupes et la creation de la cle.</p>
+                            <div class="step-meta">
+                                <div class="step-meta-item">
+                                    <strong>Operation</strong>
+                                    <span id="step-operation">-</span>
+                                </div>
+                                <div class="step-meta-item">
+                                    <strong>Caractere</strong>
+                                    <span id="step-character">-</span>
+                                </div>
+                                <div class="step-meta-item">
+                                    <strong>Carte cle</strong>
+                                    <span id="step-keycard">-</span>
+                                </div>
+                                <div class="step-meta-item">
+                                    <strong>Resultat partiel</strong>
+                                    <span id="step-partial">-</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="step-controls">
+                            <button class="secondary-btn" id="prev-step-btn" onclick="previousStep()" disabled>Previous Step</button>
+                            <button class="primary-btn" id="next-step-btn" onclick="nextStep()" disabled>Next Step</button>
+                            <button class="ghost-btn" id="autoplay-btn" onclick="toggleAutoplay()" disabled>Auto Play</button>
+                            <button class="ghost-btn" onclick="jumpToLastStep()" id="last-step-btn" disabled>Show Final Step</button>
+                        </div>
+                    </div>
+                    <div class="deck-grid">
+                        <div class="deck-container">
+                            <div class="deck-label-row">
+                                <label for="encrypt-deck-canvas">Deck de chiffrement</label>
+                                <span class="deck-pill">Canal noir</span>
+                            </div>
+                            <canvas id="encrypt-deck-canvas" width="700" height="600"></canvas>
+                        </div>
+                        <div class="deck-container">
+                            <div class="deck-label-row">
+                                <label for="decrypt-deck-canvas">Deck de déchiffrement</label>
+                                <span class="deck-pill">Canal rouge</span>
+                            </div>
+                            <canvas id="decrypt-deck-canvas" width="700" height="600"></canvas>
+                        </div>
+                    </div>
+                    <p class="footer-note">
+                        Survolez les cartes pour voir l'animation. Les jokers restent mis en évidence pour suivre
+                        plus facilement les étapes du Solitaire Cipher.
+                    </p>
+                    <details class="legend-disclosure">
+                        <summary>Rappels et explications de calcul</summary>
+                        <div class="legend-content">
+                            <div class="legend-grid">
+                                <div class="legend-item">
+                                    <strong>Lettres</strong>
+                                    <p>`A = 1`, `B = 2`, ..., `Z = 26`. Exemple: `C = 3`, donc si on ajoute une cle de `5`, on calcule `((3 + 5 - 1) mod 26) + 1 = 8`, soit `H`.</p>
+                                </div>
+                                <div class="legend-item">
+                                    <strong>Cartes</strong>
+                                    <p>Les cartes valent `1` a `52` dans l'ordre du paquet. Exemple: `A de Trefle = 1`, `K de Trefle = 13`, `A de Carreau = 14`, `K de Pique = 52`. Les jokers valent `53` et `54`.</p>
+                                </div>
+                                <div class="legend-item">
+                                    <strong>Modulo 26</strong>
+                                    <p>Le `mod 26` ramene toujours une valeur dans l'alphabet. Exemple: `29 mod 26 = 3`. C'est ce qui permet de boucler de `Z` vers `A` pendant le chiffrement.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </details>
+                </section>
+            </section>
+        </div>
+    </main>
+
+    <script>
+        let imageContent = null;
+        let encryptDeck = null;
+        let decryptDeck = null;
+        let currentSeed = null;
+        let walkthroughSession = null;
+        let currentStepIndex = -1;
+        let autoplayTimer = null;
+        let lastEncryptedResult = "";
+        let lastDecryptedResult = "";
+        let lastOriginalResult = "";
+
+        function formatPreview(text, maxLength = 140) {
+            if (!text) return "";
+            return text.length > maxLength ? `${text.slice(0, maxLength)}...` : text;
+        }
+
+        class SolitaireCipher {
+            constructor(seed = null) {
+                this.initialDeck = Array.from({ length: 54 }, (_, i) => i + 1);
+                this.encryptDeck = [];
+                this.decryptDeck = [];
+                this.encryptCardsUsed = [];
+                this.decryptCardsUsed = [];
+                this.currentSeed = seed !== null ? seed : Math.floor(Math.random() * 1000000);
+                this.resetDecks();
+            }
+
+            resetDecks() {
+                this.encryptDeck = [...this.initialDeck];
+                this.decryptDeck = [...this.initialDeck];
+                this.shuffle(this.encryptDeck, this.currentSeed);
+                this.shuffle(this.decryptDeck, this.currentSeed);
+                this.encryptCardsUsed = [];
+                this.decryptCardsUsed = [];
+            }
+
+            shuffle(deck, seed) {
+                const rng = this.seededRandom(seed);
+                for (let i = deck.length - 1; i > 0; i--) {
+                    const j = Math.floor(rng() * (i + 1));
+                    [deck[i], deck[j]] = [deck[j], deck[i]];
+                }
+            }
+
+            seededRandom(seed) {
+                return function () {
+                    seed = (seed * 9301 + 49297) % 233280;
+                    return seed / 233280;
+                };
+            }
+
+            moveJokerForward(deck, joker) {
+                const index = deck.indexOf(joker);
+                if (index === -1) throw new Error(`Joker ${joker} non trouve dans le deck`);
+                deck.splice(index, 1);
+
+                let newIndex = index + 1;
+                if (index === deck.length) {
+                    newIndex = 1;
+                }
+                deck.splice(newIndex, 0, joker);
+                return { from: index, to: newIndex };
+            }
+
+            moveJokerForwardTwo(deck, joker) {
+                const firstMove = this.moveJokerForward(deck, joker);
+                const secondMove = this.moveJokerForward(deck, joker);
+                return {
+                    from: firstMove.from,
+                    via: firstMove.to,
+                    to: secondMove.to
+                };
+            }
+
+            tripleCut(deck) {
+                const first = Math.min(deck.indexOf(53), deck.indexOf(54));
+                const second = Math.max(deck.indexOf(53), deck.indexOf(54));
+                if (first === -1 || second === -1) throw new Error("Jokers manquants dans le deck");
+                const newDeck = [
+                    ...deck.slice(second + 1),
+                    ...deck.slice(first, second + 1),
+                    ...deck.slice(0, first)
+                ];
+                deck.splice(0, deck.length, ...newDeck);
+                return { first, second };
+            }
+
+            countCut(deck) {
+                if (deck.length !== 54) throw new Error("Deck invalide : longueur incorrecte");
+                const cutValue = Math.min(deck[deck.length - 1], 53);
+                const top = deck.slice(0, cutValue);
+                const middle = deck.slice(cutValue, deck.length - 1);
+                const bottom = deck[deck.length - 1];
+                deck.splice(0, deck.length, ...middle, ...top, bottom);
+                return { cutValue, bottomCard: bottom };
+            }
+
+            generateKeystreamValue(deck, cardList) {
+                let iterations = 0;
+                const maxIterations = 1000;
+                while (iterations < maxIterations) {
+                    if (deck.length !== 54) throw new Error("Deck corrompu : longueur incorrecte");
+                    this.moveJokerForward(deck, 53);
+                    this.moveJokerForwardTwo(deck, 54);
+                    this.tripleCut(deck);
+                    this.countCut(deck);
+
+                    const topCard = Math.min(deck[0], 53);
+                    if (topCard >= deck.length) {
+                        iterations++;
+                        continue;
+                    }
+
+                    const keystreamValue = deck[topCard];
+                    if (keystreamValue <= 52) {
+                        cardList.push(this.numberToCard(keystreamValue));
+                        return ((keystreamValue - 1) % 26) + 1;
+                    }
+                    iterations++;
+                }
+                throw new Error(`Impossible de generer une valeur de cle valide apres ${maxIterations} iterations`);
+            }
+
+            generateKey(length, deck, isEncrypt) {
+                const cardList = isEncrypt ? this.encryptCardsUsed : this.decryptCardsUsed;
+                const key = [];
+                for (let i = 0; i < length; i++) {
+                    key.push(this.generateKeystreamValue(deck, cardList));
+                }
+                return key;
+            }
+
+            numberToCard(num) {
+                const suits = ["♣", "♦", "♥", "♠"];
+                const values = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
+                if (num === 53) return "Joker Noir";
+                if (num === 54) return "Joker Rouge";
+                const suitIndex = Math.floor((num - 1) / 13);
+                const valueIndex = (num - 1) % 13;
+                return `${values[valueIndex]}${suits[suitIndex]}`;
+            }
+
+            deckToList(deck) {
+                return deck.map((num) => this.numberToCard(num));
+            }
+
+            cloneDeck(deck) {
+                return [...deck];
+            }
+
+            numberToLetterValue(char) {
+                if (!/[A-Z]/.test(char)) return 0;
+                return char.charCodeAt(0) - 64;
+            }
+
+            letterValueToChar(value) {
+                if (value === 0) return " ";
+                return String.fromCharCode(((value - 1) % 26) + 65);
+            }
+
+            explainCardValue(num) {
+                if (num === 53) return "Joker Noir = 53";
+                if (num === 54) return "Joker Rouge = 54";
+                const suitNames = ["Trefle", "Carreau", "Coeur", "Pique"];
+                const values = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
+                const suitIndex = Math.floor((num - 1) / 13);
+                const valueIndex = (num - 1) % 13;
+                const rankValue = valueIndex + 1;
+                return `${values[valueIndex]} de ${suitNames[suitIndex]} = (${suitIndex} x 13) + ${rankValue} = ${num}`;
+            }
+
+            makeStep(mode, deck, title, description, extra = {}) {
+                return {
+                    mode,
+                    deck: this.cloneDeck(deck),
+                    title,
+                    description,
+                    ...extra
+                };
+            }
+
+            textToNumbers(text) {
+                const upper = text.toUpperCase();
+                const result = [];
+                for (const char of upper) {
+                    if (char === " ") result.push(0);
+                    else if (/[A-Z]/.test(char)) result.push(char.charCodeAt(0) - 64);
+                }
+                return result;
+            }
+
+            numbersToText(numbers) {
+                return numbers.map((num) => num === 0 ? " " : String.fromCharCode((num - 1) % 26 + 65)).join("");
+            }
+
+            cleanText(text) {
+                return text.toUpperCase().replace(/[^A-Z ]/g, "");
+            }
+
+            binaryToAlphabet(binaryData) {
+                const binaryStr = Array.from(new Uint8Array(binaryData))
+                    .map((byte) => byte.toString(2).padStart(8, "0"))
+                    .join("");
+                let alphabet = "";
+                for (let i = 0; i < binaryStr.length; i += 5) {
+                    let chunk = binaryStr.slice(i, i + 5);
+                    if (chunk.length < 5) chunk += "0".repeat(5 - chunk.length);
+                    const value = parseInt(chunk, 2);
+                    alphabet += value < 26 ? String.fromCharCode(65 + value) : "A";
+                }
+                return alphabet;
+            }
+
+            alphabetToBinary(alphabetStr) {
+                let binaryStr = "";
+                for (const char of alphabetStr) {
+                    if (/[A-Z]/.test(char)) {
+                        const value = char.charCodeAt(0) - 65;
+                        binaryStr += value.toString(2).padStart(5, "0");
+                    }
+                }
+
+                const byteArray = [];
+                for (let i = 0; i < binaryStr.length; i += 8) {
+                    const byteChunk = binaryStr.slice(i, i + 8);
+                    const padded = byteChunk + "0".repeat(Math.max(0, 8 - byteChunk.length));
+                    byteArray.push(parseInt(padded, 2));
+                }
+                return new Uint8Array(byteArray);
+            }
+
+            generateKeystreamWithSteps(deck, mode, charIndex, sourceChar, partialResult) {
+                const steps = [];
+                let iterations = 0;
+                const maxIterations = 1000;
+
+                while (iterations < maxIterations) {
+                    const joker53Move = this.moveJokerForward(deck, 53);
+                    steps.push(this.makeStep(
+                        mode,
+                        deck,
+                        `Etape 1 - Joker noir pour le caractere ${charIndex + 1}`,
+                        `Le Joker Noir vaut 53. Il etait en position ${joker53Move.from + 1}. On le fait avancer d'une case vers la suite du deck, donc ${joker53Move.from + 1} + 1 = ${joker53Move.to + 1} dans notre representation.`,
+                        {
+                            operation: "Move Joker Noir",
+                            charIndex,
+                            sourceChar,
+                            partialResult
+                        }
+                    ));
+
+                    const joker54Move = this.moveJokerForwardTwo(deck, 54);
+                    steps.push(this.makeStep(
+                        mode,
+                        deck,
+                        `Etape 2 - Joker rouge pour le caractere ${charIndex + 1}`,
+                        `Le Joker Rouge vaut 54. Il etait en position ${joker54Move.from + 1}. Il avance d'abord vers ${joker54Move.via + 1}, puis encore d'une case vers ${joker54Move.to + 1}. Au total, il avance de deux positions dans le sens du deck.`,
+                        {
+                            operation: "Move Joker Rouge",
+                            charIndex,
+                            sourceChar,
+                            partialResult
+                        }
+                    ));
+
+                    const tripleInfo = this.tripleCut(deck);
+                    steps.push(this.makeStep(
+                        mode,
+                        deck,
+                        `Etape 3 - Triple cut pour le caractere ${charIndex + 1}`,
+                        `On coupe autour des jokers situes aux positions ${tripleInfo.first + 1} et ${tripleInfo.second + 1}.`,
+                        {
+                            operation: "Triple Cut",
+                            charIndex,
+                            sourceChar,
+                            partialResult
+                        }
+                    ));
+
+                    const cutInfo = this.countCut(deck);
+                    steps.push(this.makeStep(
+                        mode,
+                        deck,
+                        `Etape 4 - Count cut pour le caractere ${charIndex + 1}`,
+                        `La derniere carte est ${this.numberToCard(cutInfo.bottomCard)}. ${this.explainCardValue(cutInfo.bottomCard)}. Dans le count cut on prend min(${cutInfo.bottomCard}, 53) = ${cutInfo.cutValue}, donc on coupe ${cutInfo.cutValue} cartes depuis le haut du deck.`,
+                        {
+                            operation: "Count Cut",
+                            charIndex,
+                            sourceChar,
+                            partialResult
+                        }
+                    ));
+
+                    const topCard = Math.min(deck[0], 53);
+                    const topCardLabel = this.numberToCard(deck[0]);
+                    const keystreamValue = deck[topCard];
+                    const keyCard = this.numberToCard(keystreamValue);
+
+                    if (keystreamValue <= 52) {
+                        const keyShift = ((keystreamValue - 1) % 26) + 1;
+                        steps.push(this.makeStep(
+                            mode,
+                            deck,
+                            `Etape 5 - Lecture de la cle pour le caractere ${charIndex + 1}`,
+                            `La premiere carte du deck est ${topCardLabel}. ${this.explainCardValue(deck[0])}. Elle vaut donc ${deck[0]}, et on regarde la carte en position min(${deck[0]}, 53) = ${topCard}. Cette carte est ${keyCard}. ${this.explainCardValue(keystreamValue)}. La valeur de decalage est ensuite ((${keystreamValue} - 1) mod 26) + 1 = ${keyShift}.`,
+                            {
+                                operation: "Read Keystream",
+                                charIndex,
+                                sourceChar,
+                                partialResult,
+                                keyCard,
+                                keyValue: keyShift
+                            }
+                        ));
+                        return {
+                            keyValue: keyShift,
+                            keyCard,
+                            steps
+                        };
+                    }
+
+                    steps.push(this.makeStep(
+                        mode,
+                        deck,
+                        `Carte invalide pour le caractere ${charIndex + 1}`,
+                        `La sortie tombe sur ${keyCard}, donc on recommence un cycle pour produire une carte cle exploitable.`,
+                        {
+                            operation: "Retry Keystream",
+                            charIndex,
+                            sourceChar,
+                            partialResult,
+                            keyCard
+                        }
+                    ));
+
+                    iterations++;
+                }
+
+                throw new Error(`Impossible de generer une valeur de cle valide apres ${maxIterations} iterations`);
+            }
+
+            processWithSteps(mode, text, isImage = false) {
+                if (!text) throw new Error(mode === "encrypt" ? "Texte d'entree vide" : "Texte chiffre vide");
+                if (text.length > 10000) throw new Error("Texte trop long (max 10000 caracteres)");
+
+                const cleaned = mode === "encrypt" ? (isImage ? text : this.cleanText(text)) : text.toUpperCase();
+                const numbers = this.textToNumbers(cleaned);
+                const deck = mode === "encrypt" ? this.encryptDeck : this.decryptDeck;
+                const steps = [
+                    this.makeStep(
+                        mode,
+                        deck,
+                        mode === "encrypt" ? "Deck initial de chiffrement" : "Deck initial de dechiffrement",
+                        `Le deck melange avec la graine ${this.currentSeed} sert de point de depart pour toute la sequence.`,
+                        {
+                            operation: "Initial Deck",
+                            partialResult: ""
+                        }
+                    )
+                ];
+
+                const outputNumbers = [];
+                let partialResult = "";
+
+                numbers.forEach((num, index) => {
+                    const sourceChar = cleaned[index] || " ";
+
+                    if (num === 0) {
+                        outputNumbers.push(0);
+                        partialResult = this.numbersToText(outputNumbers);
+                        steps.push(this.makeStep(
+                            mode,
+                            deck,
+                            `Caractere ${index + 1} conserve`,
+                            "Un espace ne consomme pas de valeur de cle. Il est recopie tel quel dans le resultat.",
+                            {
+                                operation: "Copy Space",
+                                charIndex: index,
+                                sourceChar: "space",
+                                partialResult
+                            }
+                        ));
+                        return;
+                    }
+
+                    steps.push(this.makeStep(
+                        mode,
+                        deck,
+                        `Preparation du caractere ${index + 1}`,
+                        `On prepare le caractere "${sourceChar}" pour ${mode === "encrypt" ? "le chiffrement" : "le dechiffrement"}.`,
+                        {
+                            operation: "Prepare Character",
+                            charIndex: index,
+                            sourceChar,
+                            partialResult
+                        }
+                    ));
+
+                    const keyData = this.generateKeystreamWithSteps(deck, mode, index, sourceChar, partialResult);
+                    steps.push(...keyData.steps);
+
+                    const resultNumber = mode === "encrypt"
+                        ? ((num + keyData.keyValue - 1) % 26 + 1)
+                        : ((num - keyData.keyValue - 1 + 26) % 26 + 1);
+                    outputNumbers.push(resultNumber);
+                    partialResult = this.numbersToText(outputNumbers);
+                    const sourceValue = this.numberToLetterValue(sourceChar);
+                    const producedChar = this.letterValueToChar(resultNumber);
+
+                    steps.push(this.makeStep(
+                        mode,
+                        deck,
+                        `Transformation du caractere ${index + 1}`,
+                        mode === "encrypt"
+                            ? `"${sourceChar}" vaut ${sourceValue} car A=1, B=2, ..., Z=26. On calcule ((${sourceValue} + ${keyData.keyValue} - 1) mod 26) + 1 = ${resultNumber}. La valeur ${resultNumber} correspond a "${producedChar}".`
+                            : `"${sourceChar}" vaut ${sourceValue} car A=1, B=2, ..., Z=26. On calcule ((${sourceValue} - ${keyData.keyValue} - 1 + 26) mod 26) + 1 = ${resultNumber}. La valeur ${resultNumber} correspond a "${producedChar}".`,
+                        {
+                            operation: mode === "encrypt" ? "Encrypt Character" : "Decrypt Character",
+                            charIndex: index,
+                            sourceChar,
+                            partialResult,
+                            keyCard: keyData.keyCard,
+                            keyValue: keyData.keyValue
+                        }
+                    ));
+                });
+
+                const finalText = this.numbersToText(outputNumbers);
+                steps.push(this.makeStep(
+                    mode,
+                    deck,
+                    mode === "encrypt" ? "Resultat final du chiffrement" : "Resultat final du dechiffrement",
+                    "Toutes les lettres ont ete traitees. Le deck affiche maintenant l'etat final apres la derniere generation de cle.",
+                    {
+                        operation: "Final Result",
+                        partialResult: finalText
+                    }
+                ));
+
+                return {
+                    text: finalText,
+                    cleaned: mode === "encrypt" && !isImage ? cleaned : null,
+                    sourceText: cleaned,
+                    deck: this.deckToList(deck),
+                    deckNumbers: this.cloneDeck(deck),
+                    seed: this.currentSeed,
+                    steps
+                };
+            }
+        }
+
+        function updateDashboardState() {
+            const inputValue = document.getElementById("input-text").value || "";
+            document.getElementById("input-length").textContent = `${inputValue.length} caracteres`;
+            document.getElementById("mode-indicator").textContent = imageContent ? "Image convertie" : "Texte";
+            document.getElementById("deck-status").textContent = currentSeed !== null ? "Pret a dechiffrer" : "Non initialise";
+            document.getElementById("seed-chip").textContent = currentSeed !== null ? `Graine : ${currentSeed}` : "Graine : en attente";
+            document.getElementById("step-badge").textContent = document.getElementById("step-mode").checked ? "Mode pas a pas" : "Mode instantane";
+        }
+
+        function drawDeck(deck, canvasId) {
+            const canvas = document.getElementById(canvasId);
+            if (!canvas || !canvas.getContext) {
+                console.error(`Canvas ${canvasId} non trouve ou contexte indisponible`);
+                return;
+            }
+
+            const ctx = canvas.getContext("2d");
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = "#0b1220";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            if (!deck || deck.length === 0) {
+                ctx.fillStyle = "rgba(248, 244, 231, 0.75)";
+                ctx.font = '20px "Special Elite"';
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                ctx.fillText(
+                    canvasId.includes("encrypt") ? "Deck de chiffrement en attente" : "Deck de dechiffrement en attente",
+                    canvas.width / 2,
+                    canvas.height / 2
+                );
+
+                if (canvas.animationId) {
+                    cancelAnimationFrame(canvas.animationId);
+                    canvas.animationId = null;
+                }
+                return;
+            }
+
+            let hoveredCard = null;
+            if (!canvas.hasAttribute("data-listeners-added")) {
+                canvas.addEventListener("mousemove", (event) => {
+                    const rect = canvas.getBoundingClientRect();
+                    const scaleX = canvas.width / rect.width;
+                    const scaleY = canvas.height / rect.height;
+                    const mouseX = (event.clientX - rect.left) * scaleX;
+                    const mouseY = (event.clientY - rect.top) * scaleY;
+                    hoveredCard = null;
+
+                    deck.forEach((card, i) => {
+                        const x = 30 + (i % 9) * 74;
+                        const y = 30 + Math.floor(i / 9) * 90;
+                        const width = 60;
+                        const height = 80;
+                        if (mouseX >= x && mouseX <= x + width && mouseY >= y && mouseY <= y + height) {
+                            hoveredCard = i;
+                        }
+                    });
+                });
+
+                canvas.addEventListener("mouseout", () => {
+                    hoveredCard = null;
+                });
+
+                canvas.setAttribute("data-listeners-added", "true");
+            }
+
+            let frame = 0;
+            if (canvas.animationId) {
+                cancelAnimationFrame(canvas.animationId);
+            }
+
+            function animate() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = "#0b1220";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                deck.forEach((card, i) => {
+                    const x = 30 + (i % 9) * 74;
+                    const y = 30 + Math.floor(i / 9) * 90;
+                    const width = 60;
+                    const height = 80;
+                    const slide = frame < 30 ? (30 - frame) * 5 : 0;
+                    let scale = frame < 15 ? 0.84 + (frame / 15) * 0.16 : 1;
+                    let rotate = frame < 15 ? (15 - frame) * 0.01 : 0;
+
+                    if (i === hoveredCard) {
+                        scale *= 1.08;
+                        rotate += Math.sin(frame * 0.08) * 0.04;
+                    }
+
+                    ctx.save();
+                    ctx.translate(x + width / 2 - slide, y + height / 2);
+                    ctx.rotate(rotate);
+                    ctx.scale(scale, scale);
+                    ctx.translate(-width / 2, -height / 2);
+
+                    const isJoker = card.includes("Joker");
+                    ctx.fillStyle = isJoker ? "#24131a" : "#f7ead1";
+                    ctx.fillRect(0, 0, width, height);
+
+                    ctx.fillStyle = isJoker
+                        ? (card === "Joker Noir" ? "rgba(15, 23, 42, 0.42)" : "rgba(251, 113, 133, 0.24)")
+                        : "rgba(255, 255, 255, 0.28)";
+                    ctx.fillRect(0, 0, width, height);
+
+                    if (isJoker) {
+                        ctx.shadowColor = card === "Joker Noir" ? "#020617" : "#fb7185";
+                        ctx.shadowBlur = 14;
+                        ctx.fillRect(0, 0, width, height);
+                        ctx.shadowBlur = 0;
+                    }
+
+                    ctx.strokeStyle = isJoker ? "#f8fafc" : "#c0872a";
+                    ctx.lineWidth = isJoker ? 3 : 2;
+                    ctx.strokeRect(1, 1, width - 2, height - 2);
+
+                    ctx.fillStyle = "rgba(0, 0, 0, 0.18)";
+                    ctx.beginPath();
+                    ctx.moveTo(0, 0);
+                    ctx.lineTo(5, 5);
+                    ctx.lineTo(5, height - 5);
+                    ctx.lineTo(0, height);
+                    ctx.fill();
+
+                    ctx.beginPath();
+                    ctx.moveTo(0, 0);
+                    ctx.lineTo(width, 0);
+                    ctx.lineTo(width - 5, 5);
+                    ctx.lineTo(5, 5);
+                    ctx.fill();
+
+                    if (isJoker) {
+                        ctx.save();
+                        ctx.translate(width / 2, height / 2);
+                        ctx.fillStyle = card === "Joker Noir" ? "#020617" : "#fb7185";
+                        ctx.font = '46px "Segoe UI Emoji", sans-serif';
+                        ctx.textAlign = "center";
+                        ctx.textBaseline = "middle";
+                        ctx.fillText("🃏", 0, 4);
+                        ctx.restore();
+                    } else {
+                        ctx.save();
+                        ctx.beginPath();
+                        ctx.rect(7, 7, width - 14, height - 14);
+                        ctx.clip();
+
+                        let fontSize = 13;
+                        ctx.font = `${fontSize}px "Special Elite"`;
+                        ctx.textAlign = "center";
+                        ctx.textBaseline = "middle";
+
+                        let metrics = ctx.measureText(card);
+                        while (metrics.width > width - 16 && fontSize > 11) {
+                            fontSize--;
+                            ctx.font = `${fontSize}px "Special Elite"`;
+                            metrics = ctx.measureText(card);
+                        }
+
+                        ctx.fillStyle = "rgba(255, 255, 255, 0.88)";
+                        const rectWidth = width - 14;
+                        const rectX = (width - rectWidth) / 2 + 2;
+                        ctx.fillRect(rectX, height / 2 - fontSize * 0.9, rectWidth, fontSize * 1.8);
+
+                        ctx.fillStyle = "#111827";
+                        ctx.fillText(card, width / 2 + 2, height / 2);
+                        ctx.restore();
+                    }
+
+                    ctx.restore();
+                });
+
+                frame++;
+                canvas.animationId = requestAnimationFrame(animate);
+            }
+
+            animate();
+        }
+
+        function stopAutoplay() {
+            if (autoplayTimer) {
+                clearInterval(autoplayTimer);
+                autoplayTimer = null;
+            }
+            const autoplayBtn = document.getElementById("autoplay-btn");
+            if (autoplayBtn) autoplayBtn.textContent = "Auto Play";
+        }
+
+        function resetStepPanel() {
+            stopAutoplay();
+            walkthroughSession = null;
+            currentStepIndex = -1;
+            document.getElementById("step-progress").textContent = "Aucune simulation chargee.";
+            document.getElementById("step-title").textContent = "Pret a expliquer l'algorithme";
+            document.getElementById("step-description").textContent = "Lancez un chiffrement ou un dechiffrement pour voir chaque mouvement des jokers, les coupes et la creation de la cle.";
+            document.getElementById("step-operation").textContent = "-";
+            document.getElementById("step-character").textContent = "-";
+            document.getElementById("step-keycard").textContent = "-";
+            document.getElementById("step-partial").textContent = "-";
+            document.getElementById("prev-step-btn").disabled = true;
+            document.getElementById("next-step-btn").disabled = true;
+            document.getElementById("autoplay-btn").disabled = true;
+            document.getElementById("last-step-btn").disabled = true;
+        }
+
+        function setSession(session) {
+            stopAutoplay();
+            walkthroughSession = session;
+            currentStepIndex = 0;
+            document.getElementById("prev-step-btn").disabled = false;
+            document.getElementById("next-step-btn").disabled = false;
+            document.getElementById("autoplay-btn").disabled = false;
+            document.getElementById("last-step-btn").disabled = false;
+
+            if (document.getElementById("step-mode").checked) {
+                renderStep(0);
+            } else {
+                renderStep(session.steps.length - 1);
+            }
+        }
+
+        function renderStep(index) {
+            if (!walkthroughSession) return;
+
+            currentStepIndex = Math.max(0, Math.min(index, walkthroughSession.steps.length - 1));
+            const step = walkthroughSession.steps[currentStepIndex];
+            const isEncrypt = walkthroughSession.mode === "encrypt";
+            const partial = step.partialResult || "";
+            const cleanedSource = walkthroughSession.cleanedText || walkthroughSession.sourceText || "";
+
+            document.getElementById("step-progress").textContent = `Etape ${currentStepIndex + 1} sur ${walkthroughSession.steps.length}`;
+            document.getElementById("step-title").textContent = step.title;
+            document.getElementById("step-description").textContent = step.description;
+            document.getElementById("step-operation").textContent = step.operation || "-";
+            document.getElementById("step-character").textContent = step.sourceChar ? `${step.sourceChar} (${typeof step.charIndex === "number" ? step.charIndex + 1 : "-"})` : "-";
+            document.getElementById("step-keycard").textContent = step.keyCard ? `${step.keyCard}${typeof step.keyValue === "number" ? ` / ${step.keyValue}` : ""}` : "-";
+            document.getElementById("step-partial").textContent = partial ? formatPreview(partial, 60) : "-";
+
+            if (isEncrypt) {
+                encryptDeck = walkthroughSession.finalDeckLabels;
+                drawDeck(walkthroughSession.steps[currentStepIndex].deck.map((num) => walkthroughSession.cipher.numberToCard(num)), "encrypt-deck-canvas");
+            } else {
+                decryptDeck = walkthroughSession.finalDeckLabels;
+                drawDeck(walkthroughSession.steps[currentStepIndex].deck.map((num) => walkthroughSession.cipher.numberToCard(num)), "decrypt-deck-canvas");
+            }
+
+            document.getElementById("prev-step-btn").disabled = currentStepIndex === 0;
+            document.getElementById("next-step-btn").disabled = currentStepIndex >= walkthroughSession.steps.length - 1;
+        }
+
+        function previousStep() {
+            if (!walkthroughSession || currentStepIndex <= 0) return;
+            stopAutoplay();
+            renderStep(currentStepIndex - 1);
+        }
+
+        function nextStep() {
+            if (!walkthroughSession || currentStepIndex >= walkthroughSession.steps.length - 1) return;
+            renderStep(currentStepIndex + 1);
+        }
+
+        function jumpToLastStep() {
+            if (!walkthroughSession) return;
+            stopAutoplay();
+            renderStep(walkthroughSession.steps.length - 1);
+        }
+
+        function toggleAutoplay() {
+            if (!walkthroughSession) return;
+            const autoplayBtn = document.getElementById("autoplay-btn");
+
+            if (autoplayTimer) {
+                stopAutoplay();
+                return;
+            }
+
+            autoplayBtn.textContent = "Stop Auto";
+            autoplayTimer = setInterval(() => {
+                if (!walkthroughSession || currentStepIndex >= walkthroughSession.steps.length - 1) {
+                    stopAutoplay();
+                    return;
+                }
+                renderStep(currentStepIndex + 1);
+            }, 1100);
+        }
+
+        function buildWalkthroughSession(mode, result, cipher, isImage = false) {
+            return {
+                mode,
+                steps: result.steps,
+                sourceText: mode === "encrypt" ? (isImage ? imageContent : result.sourceText) : result.sourceText,
+                cleanedText: mode === "encrypt" ? (result.cleaned || result.sourceText) : "",
+                finalText: result.text,
+                finalDeckLabels: result.deck,
+                seed: result.seed || currentSeed,
+                cipher
+            };
+        }
+
+        async function encrypt() {
+            const input = document.getElementById("input-text").value.trim();
+            if (!input) {
+                alert("Entrez un texte a chiffrer.");
+                return;
+            }
+
+            const isImage = !!imageContent && (input === imageContent.slice(0, input.length) || input === imageContent);
+            try {
+                const cipher = new SolitaireCipher();
+                const source = isImage ? imageContent : input;
+                const result = cipher.processWithSteps("encrypt", source, isImage);
+                lastOriginalResult = result.cleaned || source;
+                document.getElementById("original-text").value = formatPreview(lastOriginalResult, 500);
+                document.getElementById("encrypted-text").value = formatPreview(result.text, 500);
+                document.getElementById("decrypted-text").value = "";
+                lastEncryptedResult = result.text;
+                lastDecryptedResult = "";
+                encryptDeck = result.deck || [];
+                currentSeed = result.seed;
+                drawDeck(result.deck, "encrypt-deck-canvas");
+                setSession(buildWalkthroughSession("encrypt", result, cipher, isImage));
+                updateDashboardState();
+            } catch (error) {
+                console.error("Erreur lors du chiffrement:", error);
+                alert(`Erreur lors du chiffrement : ${error.message}`);
+            }
+        }
+
+        async function decrypt() {
+            const encrypted = document.getElementById("encrypted-text").value.trim() || lastEncryptedResult;
+            if (!encrypted) {
+                alert("Aucun texte chiffre a dechiffrer.");
+                return;
+            }
+
+            if (currentSeed === null) {
+                alert("Aucune graine disponible. Chiffrez d'abord un message pour rejouer les etapes.");
+                return;
+            }
+
+            const isImage = !!imageContent;
+            try {
+                const cipher = new SolitaireCipher(currentSeed);
+                const result = cipher.processWithSteps("decrypt", encrypted, isImage);
+                document.getElementById("original-text").value = formatPreview(lastOriginalResult, 500);
+                document.getElementById("encrypted-text").value = formatPreview(encrypted, 500);
+                document.getElementById("decrypted-text").value = formatPreview(result.text, 500);
+                lastDecryptedResult = result.text;
+                decryptDeck = result.deck || [];
+                drawDeck(result.deck, "decrypt-deck-canvas");
+                setSession(buildWalkthroughSession("decrypt", result, cipher, isImage));
+                updateDashboardState();
+
+                if (isImage) {
+                    const binary = cipher.alphabetToBinary(result.text);
+                    new Blob([binary], { type: "image/png" });
+                }
+            } catch (error) {
+                console.error("Erreur lors du dechiffrement:", error);
+                alert(`Erreur lors du dechiffrement : ${error.message}`);
+            }
+        }
+
+        function saveFile() {
+            const inputText = document.getElementById("input-text").value.trim();
+            const originalText = document.getElementById("original-text").value.trim() || lastOriginalResult;
+            const encryptedText = document.getElementById("encrypted-text").value.trim() || lastEncryptedResult;
+            const decryptedText = document.getElementById("decrypted-text").value.trim() || lastDecryptedResult;
+
+            if (!inputText && !originalText && !encryptedText && !decryptedText && !encryptDeck && !decryptDeck) {
+                alert("Aucun contenu a sauvegarder.");
+                return;
+            }
+
+            let content = "=== Cipher Cards Output ===\n\n";
+            content += "Message saisi:\n";
+            content += inputText || "N/A";
+            content += "\n\nMessage original:\n";
+            content += originalText || "N/A";
+            content += "\n\nMessage crypte:\n";
+            content += encryptedText || "N/A";
+            content += "\n\nMessage dechiffre:\n";
+            content += decryptedText || "N/A";
+            content += "\n\nDeck encryption:\n";
+            content += encryptDeck && encryptDeck.length > 0 ? encryptDeck.join(", ") : "N/A";
+            content += "\n\nDeck dechiffrement:\n";
+            content += decryptDeck && decryptDeck.length > 0 ? decryptDeck.join(", ") : "N/A";
+            content += "\n\n=== Fin ===";
+
+            const blob = new Blob([content], { type: "text/plain" });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = "cipher_escape_output.txt";
+            link.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function clearAll() {
+            document.getElementById("input-text").value = "";
+            document.getElementById("original-text").value = "";
+            document.getElementById("encrypted-text").value = "";
+            document.getElementById("decrypted-text").value = "";
+            document.getElementById("load-file").value = "";
+            document.getElementById("load-image").value = "";
+            encryptDeck = null;
+            decryptDeck = null;
+            currentSeed = null;
+            imageContent = null;
+            lastEncryptedResult = "";
+            lastDecryptedResult = "";
+            lastOriginalResult = "";
+            resetStepPanel();
+            drawDeck([], "encrypt-deck-canvas");
+            drawDeck([], "decrypt-deck-canvas");
+            updateDashboardState();
+        }
+
+        document.getElementById("input-text").addEventListener("input", updateDashboardState);
+        document.getElementById("step-mode").addEventListener("change", () => {
+            updateDashboardState();
+            if (!walkthroughSession) return;
+            if (document.getElementById("step-mode").checked) {
+                renderStep(0);
+            } else {
+                renderStep(walkthroughSession.steps.length - 1);
+            }
+        });
+
+        document.getElementById("load-file").addEventListener("change", (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = () => {
+                clearAll();
+                document.getElementById("input-text").value = reader.result;
+                imageContent = null;
+                updateDashboardState();
+            };
+            reader.readAsText(file);
+        });
+
+        document.getElementById("load-image").addEventListener("change", (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = () => {
+                try {
+                    clearAll();
+                    const cipher = new SolitaireCipher();
+                    const binary = new Uint8Array(reader.result);
+                    const alphabet = cipher.binaryToAlphabet(binary);
+                    imageContent = alphabet;
+                    document.getElementById("input-text").value = alphabet.slice(0, 100) + (alphabet.length > 100 ? "..." : "");
+                    updateDashboardState();
+                } catch (error) {
+                    console.error("Erreur lors du chargement de l'image:", error);
+                    alert(`Erreur lors du chargement de l'image : ${error.message}`);
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        });
+
+        function runTests() {
+            const results = [];
+
+        function assert(name, got, expected) {
+            const pass = got === expected;
+            results.push({ name, pass, got, expected });
+            return pass;
+        }
+
+        
+        const c = new SolitaireCipher(42);
+
+        
+        { const d = [1, 2, 53, 3, 4]; c.moveJokerForward(d, 53);
+            assert("moveJokerForward (milieu)", JSON.stringify(d), JSON.stringify([1, 2, 3, 53, 4])); }
+
+        
+        { const d = [1, 2, 3, 53]; c.moveJokerForward(d, 53);
+            assert("moveJokerForward (dernière → pos 1)", JSON.stringify(d), JSON.stringify([1, 53, 2, 3])); }
+
+        
+        { const d = [1, 2, 53, 3, 54, 4, 5]; c.tripleCut(d);
+            assert("tripleCut", JSON.stringify(d), JSON.stringify([4, 5, 53, 3, 54, 1, 2])); }
+
+        
+        { const d = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 3]; c.countCut(d);
+            assert("countCut (val=3)", JSON.stringify(d), JSON.stringify([4, 5, 6, 7, 8, 9, 10, 1, 2, 3, 3])); }
+
+        
+        assert("cleanText", c.cleanText("Bonjour, monde!"), "BONJOUR MONDE");
+
+        
+        assert("textToNumbers ACZ", JSON.stringify(c.textToNumbers("ACZ")), JSON.stringify([1, 3, 26]));
+        assert("numbersToText [1,3,26]", c.numbersToText([1, 3, 26]), "ACZ");
+
+        
+        ["HELLO", "BONJOUR", "ABC","A"].forEach(msg => {
+            const seed = Math.floor(Math.random() * 999999) + 1;
+            const encrypted = new SolitaireCipher(seed).encryptText(msg);
+            const decrypted = new SolitaireCipher(seed).decryptText(encrypted);
+            assert(`Round-trip "${msg}"`, decrypted, msg);
+        });
+
+        
+        const r1 = new SolitaireCipher(12345).encryptText("HELLO");
+        const r2 = new SolitaireCipher(12345).encryptText("HELLO");
+        assert("Déterminisme (même graine)", r1, r2);
+        assert("Graines différentes → résultats différents",
+            String(new SolitaireCipher(1).encryptText("HELLO") !== new SolitaireCipher(2).encryptText("HELLO")), "true");
+        assert("Chiffré != clair", String(new SolitaireCipher(999).encryptText("HELLO") !== "HELLO"), "true");
+        const enc = new SolitaireCipher(777).encryptText("BONJOUR");
+        assert("Longueur conservée", String(enc.length === "BONJOUR".length), "true");
+        assert("Espaces conservés", String(new SolitaireCipher(555).encryptText("AB CD")[2] === " "), "true");
+
+        
+        const pass = results.filter(r => r.pass).length;
+        console.log(`\n=== Tests Solitaire : ${pass}/${results.length} réussis ===`);
+        results.forEach(r => {
+            if (r.pass) console.log(`  ✓ ${r.name}`);
+            else console.error(`  ✗ ${r.name}\n    attendu : ${r.expected}\n    reçu    : ${r.got}`);
+        });
+        return results;
+        }
+
+        SolitaireCipher.prototype.encryptText = function(text) {
+        const cleaned = this.cleanText(text);
+        const nums = this.textToNumbers(cleaned);
+        const deck = this.encryptDeck;
+        return this.numbersToText(nums.map(n => {
+            if (n === 0) return 0;
+            const k = this.generateKeystreamValue(deck, []);
+            return ((n + k - 1) % 26) + 1;
+        }));
+        };
+
+        SolitaireCipher.prototype.decryptText = function(text) {
+        const nums = this.textToNumbers(text.toUpperCase());
+        const deck = this.decryptDeck;
+        return this.numbersToText(nums.map(n => {
+            if (n === 0) return 0;
+            const k = this.generateKeystreamValue(deck, []);
+            return ((n - k - 1 + 26) % 26) + 1;
+        }));
+        };
+
+        function runTests() {
+            const results = [];
+
+            function assert(name, got, expected) {
+                const pass = got === expected;
+                results.push({ name, pass, got, expected });
+                return pass;
+            }
+
+            function assertTruthy(name, condition, details = "") {
+                const pass = Boolean(condition);
+                results.push({
+                    name,
+                    pass,
+                    got: details || String(condition),
+                    expected: "truthy"
+                });
+                return pass;
+            }
+
+            function assertThrows(name, fn, expectedMessage) {
+                try {
+                    fn();
+                    results.push({ name, pass: false, got: "no error", expected: expectedMessage });
+                    return false;
+                } catch (error) {
+                    const got = error && error.message ? error.message : String(error);
+                    const pass = expectedMessage ? got.includes(expectedMessage) : true;
+                    results.push({ name, pass, got, expected: expectedMessage || "an error" });
+                    return pass;
+                }
+            }
+
+            function encryptText(seed, text) {
+                return new SolitaireCipher(seed).processWithSteps("encrypt", text).text;
+            }
+
+            function decryptText(seed, text) {
+                return new SolitaireCipher(seed).processWithSteps("decrypt", text).text;
+            }
+
+            function makeSequentialDeck() {
+                return Array.from({ length: 54 }, (_, i) => i + 1);
+            }
+
+            const c = new SolitaireCipher(42);
+
+            { const d = [1, 2, 53, 3, 4]; c.moveJokerForward(d, 53);
+                assert("moveJokerForward (milieu)", JSON.stringify(d), JSON.stringify([1, 2, 3, 53, 4])); }
+
+            { const d = [1, 2, 3, 53]; c.moveJokerForward(d, 53);
+                assert("moveJokerForward (derniere -> pos 1)", JSON.stringify(d), JSON.stringify([1, 53, 2, 3])); }
+
+            { const d = [1, 54, 2, 3, 4]; c.moveJokerForwardTwo(d, 54);
+                assert("moveJokerForwardTwo", JSON.stringify(d), JSON.stringify([1, 2, 3, 54, 4])); }
+
+            { const d = [1, 2, 53, 3, 54, 4, 5]; c.tripleCut(d);
+                assert("tripleCut", JSON.stringify(d), JSON.stringify([4, 5, 53, 3, 54, 1, 2])); }
+
+            {
+                const d = makeSequentialDeck();
+                d[53] = 3;
+                c.countCut(d);
+                const expected = [...Array.from({ length: 50 }, (_, i) => i + 4), 1, 2, 3, 3];
+                assert("countCut (deck 54 cartes, val=3)", JSON.stringify(d), JSON.stringify(expected));
+            }
+
+            assertThrows("countCut refuse un deck invalide", () => c.countCut([1, 2, 3]), "Deck invalide");
+            assert("cleanText", c.cleanText("Bonjour, monde! 123"), "BONJOUR MONDE ");
+            assert("textToNumbers AC Z", JSON.stringify(c.textToNumbers("AC Z")), JSON.stringify([1, 3, 0, 26]));
+            assert("numbersToText [1,3,0,26]", c.numbersToText([1, 3, 0, 26]), "AC Z");
+
+            [
+                { seed: 101, input: "HELLO", expected: "HELLO" },
+                { seed: 202, input: "BONJOUR", expected: "BONJOUR" },
+                { seed: 404, input: "Bonjour, monde!", expected: "BONJOUR MONDE" },
+                { seed: 505, input: "A", expected: "A" }
+            ].forEach(({ seed, input, expected }) => {
+                const encrypted = encryptText(seed, input);
+                const decrypted = decryptText(seed, encrypted);
+                assert(`Round-trip "${input}"`, decrypted, expected);
+            });
+
+            const deterministicA = encryptText(12345, "HELLO WORLD");
+            const deterministicB = encryptText(12345, "HELLO WORLD");
+            assert("Determinisme (meme graine)", deterministicA, deterministicB);
+
+            const differentSeedA = encryptText(1, "HELLO WORLD");
+            const differentSeedB = encryptText(2, "HELLO WORLD");
+            assertTruthy("Graines differentes -> resultats differents", differentSeedA !== differentSeedB, `${differentSeedA} vs ${differentSeedB}`);
+            assertTruthy("Chiffre != clair", encryptText(999, "HELLO") !== "HELLO");
+
+            const encryptedWithSpaces = encryptText(555, "AB CD");
+            assert("Longueur conservee", String(encryptedWithSpaces.length), String("AB CD".length));
+            assert("Espaces conserves", encryptedWithSpaces[2], " ");
+
+            const keyProbe = new SolitaireCipher(777);
+            const keyValues = Array.from({ length: 40 }, () => keyProbe.generateKeystreamValue(keyProbe.encryptDeck, []));
+            assertTruthy("Valeurs de cle entre 1 et 26", keyValues.every((value) => value >= 1 && value <= 26), JSON.stringify(keyValues));
+
+            const pass = results.filter((r) => r.pass).length;
+            console.log(`\n=== Tests Solitaire : ${pass}/${results.length} reussis ===`);
+            results.forEach((r) => {
+                if (r.pass) console.log(`  [OK] ${r.name}`);
+                else console.error(`  [KO] ${r.name}\n    attendu : ${r.expected}\n    recu    : ${r.got}`);
+            });
+            return results;
+        }
+
+        resetStepPanel();
+        updateDashboardState();
+        drawDeck([], "encrypt-deck-canvas");
+        drawDeck([], "decrypt-deck-canvas");
+    </script>
+</body>
+</html>
