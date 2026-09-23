@@ -1,6 +1,6 @@
 # 🃏 Cipher Cards
 
-**Cipher Cards** is an interactive web app that implements and *visually explains* the **Solitaire Cipher** — a card-based encryption algorithm. Unlike a typical cipher tool that just spits out a result, this app shows you exactly what's happening to the deck of cards at every step, making it a hands-on way to understand how the algorithm actually works.
+**Cipher Cards** is an interactive web app that implements and *visually explains* the **Solitaire Cipher**, a card-based encryption algorithm. Unlike a typical cipher tool that just spits out a result, this app shows you exactly what's happening to the deck of cards at every step, making it a hands-on way to understand how the algorithm actually works.
 
 🔗 **Live demo:** [hamzaoukach.github.io/CipherCards](https://hamzaoukach.github.io/CipherCards/)
 
